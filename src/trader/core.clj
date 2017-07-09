@@ -1,5 +1,6 @@
 (ns trader.core
-  (:require [clj-http.client :as http])
+  (:require [clj-http.client :as http]
+            [trader.db :as db])
   (:import [org.knowm.xchange BaseExchange Exchange ExchangeFactory ExchangeSpecification]
            [org.knowm.xchange.currency Currency CurrencyPair]
            [org.knowm.xchange.poloniex Poloniex PoloniexAdapters PoloniexAuthenticated PoloniexException PoloniexExchange PoloniexUtils]
@@ -15,6 +16,8 @@
   (->
     (http/get (str poloniex-loan-endpoint currency-string) {:as :json})
     :body))
+
+(defn process-curent-loan-orders [currency-string])
 
 (defn -main
   "I don't do a whole lot ... yet."

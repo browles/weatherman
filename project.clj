@@ -6,6 +6,7 @@
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [clj-http "3.6.1"]
                  [cheshire "5.7.1"]
+                 [org.clojure/core.async "0.3.443"]
                  [org.clojure/java.jdbc "0.6.1"]
                  [org.xerial/sqlite-jdbc "3.19.3"]
                  [org.knowm.xchange/xchange-core "4.2.0"]

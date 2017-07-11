@@ -3,6 +3,15 @@
             [clojure.core.async :as a]
             [clojure.string :as string]))
 
+(defmacro safe-thread [& body]
+  `(a/thread
+     (try
+       ~@body
+       (catch Exception e#
+         (prn "Uncaught exception in background thread!")
+         (prn e#)
+         (System/exit 1)))))
+
 (defn format-float [rate]
   (format "%.8f" rate))
 
@@ -14,7 +23,7 @@
    (every 0 schedule f))
   ([delay schedule f]
    (let [cancel (a/chan)]
-     (a/thread
+     (safe-thread
        (loop [timer (a/timeout delay)]
          (when (a/alt!!
                  cancel false
@@ -26,11 +35,22 @@
              (recur next-timeout)))))
      cancel)))
 
-(defn cancel-scheduler [chan]
+(defn throttle [f limit regen]
+  (let [throttle-chan (a/chan (a/dropping-buffer limit))]
+    (dotimes [_ limit] (a/>!! throttle-chan :tick))
+    (fn [& args]
+      (a/<!! throttle-chan)
+      (a/go (a/<! (a/timeout regen))
+            (a/>! throttle-chan :tick))
+      (apply f args))))
+
+(defn cancel [chan]
   (a/>!! chan :cancel))
 
 (defn url-encode-map [m]
   (->> m
        (map (fn [[k v]]
-              (format "%s=%s" (url-encode (name k)) (url-encode (str v)))))
+              (when-not (nil? v)
+                (format "%s=%s" (url-encode (name k)) (url-encode (str v))))))
+       (keep identity)
        (string/join "&")))

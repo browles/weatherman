@@ -13,7 +13,7 @@
 
 (defn hmac-sha512 [^String data]
   (assert @mac "MAC not configured.")
-  (.doFinal @mac (.getBytes data "UTF-8")))
+  (.doFinal ^Mac @mac (.getBytes data "UTF-8")))
 
 (defn hmac-sha512-base64 [^String data]
   (String. (Base64/encodeBase64 (hmac-sha512 data))))

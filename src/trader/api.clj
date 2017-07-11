@@ -80,7 +80,7 @@
   (api-post {:command "returnBalances"}))
 
 (defn return-complete-balances [account]
-  (consts/validate-account account)
+  (consts/validate-account account nil)
   (api-post {:command "returnCompleteBalances"
              :account account}))
 
@@ -147,6 +147,7 @@
   (api-post {:command "returnFeeInfo"}))
 
 (defn return-available-account-balances [account]
+  (consts/validate-account account nil)
   (api-post {:command "returnAvailableAccountBalances"
              :account account}))
 
@@ -154,7 +155,9 @@
   (api-post {:command "returnTradableBalances"}))
 
 (defn transfer-balance [currency amount from-account to-account]
-  (consts/validate-currency-pair currency-pair)
+  (consts/validate-currency currency)
+  (consts/validate-account from-account)
+  (consts/validate-account to-account)
   (api-post {:command "transferBalance"
              :amount amount
              :fromAccount from-account

@@ -16,12 +16,12 @@
     "CYC" "DNS" "TRUST" "SBD" "ETC" "GML" "AMP" "DRM" "CC" "NTX" "GLB" "SOC" "ADN" "EBT" "XXC" "YANG" "ACH"
     "CNL" "MON" "Q2C" "MRC" "SMC" "HOT" "MMC" "RBY" "ETH" "BTS" "SWARM" "BITCNY" "WOLF" "CGA" "ECC" "XHC"
     "GPC" "ITC" "GRC" "VOOT" "NXT" "USDE" "QBK" "LBC" "STR" "GEO" "DIME" "WC" "UTC" "FIBRE" "SRCC" "NRS" "DAO"
-
     "KEY" "NAS" "DSH" "RDD" "CLAM" "QTL" "HVC" "DICE" "BOST" "BTM" "GIAR" "SQL" "BTC" "NAV" "SYS" "FLAP" "LOL"
     "MNTA" "LSK" "HUC" "NL" "PASC" "NXC" "POT" "NXTI" "GUE" "SILK" "XEM" "SSD" "JPC" "AXIS" "BANK" "CORG"
     "EXP" "UTIL" "QCN" "BBR" "BALLS" "XPM" "GOLD" "UIS" "BELA" "TWE" "N5X" "FLDC" "XUSD" "GPUC" "MUN" "XAP"
     "GNS" "PRC" "NMC" "XSI" "BITUSD" "BCC" "MTS" "ARDR" "CNMT" "XCR" "LTC" "X13" "MEC" "SDC" "BLU" "BNS"
     "LOVE" "XVC" "HYP" "SPA" "PMC" "LGC" "FRQ" "SHOPX"})
+
 (def currency-pairs
   #{"BTC_XEM" "USDT_XMR" "ETH_ETC" "BTC_BTM" "BTC_LTC" "BTC_RADS" "ETH_GNT" "BTC_STEEM" "BTC_DCR" "XMR_MAID"
     "XMR_BTCD" "BTC_SJCX" "BTC_GRC" "BTC_NXC" "BTC_VIA" "BTC_XVC" "BTC_BTCD" "BTC_NOTE" "BTC_VRC" "BTC_BELA"
@@ -33,26 +33,28 @@
     "BTC_BCN" "BTC_EXP" "BTC_BLK" "XMR_NXT" "BTC_HUC" "XMR_BLK" "BTC_XCP" "BTC_BTS" "BTC_ETC" "BTC_FLDC"
     "BTC_EMC2" "BTC_NEOS" "BTC_SBD" "ETH_ZEC" "ETH_REP" "BTC_FLO" "BTC_MAID" "USDT_LTC" "USDT_NXT" "BTC_FCT"})
 
+(def accounts #{"lending" "margin" "exchange"})
+
 (defn assert-contains
   ([set message item]
-   (assert-contains set message item nil))
+   (assert (contains? set item) (format message item)))
   ([set message item alternate]
    (assert (or (when alternate (= alternate item))
                (contains? set item))
            (format message item))))
 
 (def validate-currency (partial assert-contains
-                                consts/currencies
+                                currencies
                                 "Invalid currency provided: %s"))
 
 (def validate-currency-pair (partial assert-contains
-                                     consts/currency-pairs
+                                     currency-pairs
                                      "Invalid currency-pair provided: %s"))
 
 (def validate-chart-period (partial assert-contains
-                                    consts/chart-periods
+                                    chart-periods
                                     "Invalid period provided: %s"))
 
 (def validate-account (partial assert-contains
-                               #{nil "all"}
+                               accounts
                                "Invalid account provided: %s"))

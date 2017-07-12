@@ -55,7 +55,7 @@
        (keep identity)
        (string/join "&")))
 
-(defn- assert-contains
+(defn assert-contains
   [set-atom message item & {:as opts}]
   (assert @set-atom "set-atom is nil!")
   (if opts

@@ -1,4 +1,4 @@
-(ns trader.db
+(ns weatherman.db
   (:require [clojure.java.jdbc :as jdbc]
             [clojure.string :as string]))
 

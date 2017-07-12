@@ -1,4 +1,4 @@
-(ns trader.crypto
+(ns weatherman.crypto
   (:import javax.crypto.Mac
            javax.crypto.spec.SecretKeySpec
            [org.apache.commons.codec.binary Base64 Hex]))

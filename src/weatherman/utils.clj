@@ -1,4 +1,4 @@
-(ns trader.utils
+(ns weatherman.utils
   (:require [clj-http.util :refer [url-encode]]
             [clojure.core.async :as a]
             [clojure.string :as string]))
@@ -54,3 +54,13 @@
                 (format "%s=%s" (url-encode (name k)) (url-encode (str v))))))
        (keep identity)
        (string/join "&")))
+
+(defn- assert-contains
+  [set-atom message item & {:as opts}]
+  (assert @set-atom "set-atom is nil!")
+  (if opts
+    (assert (or (= (:allow opts) item)
+                (contains? @set-atom item))
+            (format message item))
+    (assert (contains? @set-atom item)
+            (format message item))))

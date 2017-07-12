@@ -2,4 +2,4 @@
 
 source config.sh
 
-lein run weatherman.core/-main
+lein repl :start :host 0.0.0.0

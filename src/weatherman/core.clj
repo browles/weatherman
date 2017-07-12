@@ -1,7 +1,7 @@
-(ns trader.core
-  (:require [trader.api :as api]
-            [trader.db :as db]
-            [trader.utils :as utils])
+(ns weatherman.core
+  (:require [weatherman.api :as api]
+            [weatherman.db :as db]
+            [weatherman.utils :as utils])
   (:gen-class))
 
 (defn process-current-market-loan-offers [currency]
@@ -16,7 +16,7 @@
         bottom-rates (->> last-offers
                           (sort-by :rate <)
                           (drop 1)
-                          (take 5)
+                          (take 20)
                           (map :rate))]
     (/ (reduce + bottom-rates)
        (count bottom-rates))))
@@ -25,14 +25,14 @@
   (process-current-market-loan-offers currency)
   (println "Fetching lending account balance for" currency)
   (let [balance (-> (api/return-available-account-balances "lending")
-                    (get-in [:lending (keyword currency)])
+                    (get-in [:lending (keyword currency)] 0)
                     (#(Float/parseFloat %)))
         threshold 0.01
         amount (utils/truncate-float (min balance 0.25))
         duration 2
         rate (utils/truncate-float (choose-rate))]
     (when (>= amount threshold)
-      (println "Attempting to create offer for" amount "at" (utils/format-float rate))
+      (println "Attempting to create offer for" amount currency "at" (utils/format-float rate))
       (let [result (api/create-loan-offer "BTC"
                                           amount
                                           duration

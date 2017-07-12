@@ -1,4 +1,4 @@
-(defproject trader "0.1.0-SNAPSHOT"
+(defproject weatherman "0.1.0-SNAPSHOT"
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
@@ -12,6 +12,8 @@
                  [org.knowm.xchange/xchange-core "4.2.0"]
                  [org.knowm.xchange/xchange-poloniex "4.2.0"]
                  [org.knowm.xchange/xchange-coinbase "4.2.0"]]
-  :main ^:skip-aot trader.core
+  :main ^:skip-aot weatherman.core
+  :repl-options {:init-ns weatherman.core
+                 :init (require 'weatherman.core)}
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}})

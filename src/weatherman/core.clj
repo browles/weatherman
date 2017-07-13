@@ -38,12 +38,14 @@
                                           duration
                                           0
                                           rate)]
-        (when-not (zero? (:success result))
-          (println "Created offer for" amount "at" (utils/format-float rate))
-          (db/insert-loan-offer {:order_id (:orderID result)
-                                 :amount amount
-                                 :duration duration
-                                 :rate rate}))))))
+        (if (zero? (:success result))
+          (println "Failed creating offer for reason:" result)
+          (do
+            (println "Created offer for" amount "at" (utils/format-float rate))
+            (db/insert-loan-offer {:order_id (:orderID result)
+                                   :amount amount
+                                   :duration duration
+                                   :rate rate})))))))
 
 (defn -main
   [& args]

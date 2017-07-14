@@ -16,7 +16,7 @@
   (format "%.8f" rate))
 
 (defn truncate-float [rate]
-  (Float/parseFloat (format-float rate)))
+  (Double/parseDouble (format-float rate)))
 
 (defn every
   ([schedule f]
@@ -35,17 +35,14 @@
              (recur next-timeout)))))
      cancel)))
 
-(defn throttle [f limit regen]
+(defn throttle [f limit period]
   (let [throttle-chan (a/chan (a/dropping-buffer limit))]
     (dotimes [_ limit] (a/>!! throttle-chan :tick))
     (fn [& args]
       (a/<!! throttle-chan)
-      (a/go (a/<! (a/timeout regen))
+      (a/go (a/<! (a/timeout period))
             (a/>! throttle-chan :tick))
       (apply f args))))
-
-(defn cancel [chan]
-  (a/>!! chan :cancel))
 
 (defn url-encode-map [m]
   (->> m
@@ -57,7 +54,6 @@
 
 (defn assert-contains
   [set-atom message item & {:as opts}]
-  (assert @set-atom "set-atom is nil!")
   (if opts
     (assert (or (= (:allow opts) item)
                 (contains? @set-atom item))

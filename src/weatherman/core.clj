@@ -1,5 +1,6 @@
 (ns weatherman.core
-  (:require [weatherman.api :as api]
+  (:require [clojure.core.async :as a]
+            [weatherman.api :as api]
             [weatherman.db :as db]
             [weatherman.utils :as utils])
   (:gen-class))
@@ -54,4 +55,4 @@
     (try
       @(promise)
       (finally
-        (utils/cancel lender)))))
+        (a/>!! lender :stop)))))

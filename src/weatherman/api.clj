@@ -9,7 +9,7 @@
 
 (def user-agent "weatherman.api.clj/0.0.1")
 
-(def poloniex-push-endpoint "wss://api.poloniex.com")
+(def poloniex-push-endpoint "wss://api2.poloniex.com")
 (def poloniex-public-endpoint "https://poloniex.com/public")
 (def poloniex-trade-endpoint "https://poloniex.com/tradingApi")
 

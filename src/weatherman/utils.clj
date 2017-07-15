@@ -13,7 +13,7 @@
          (System/exit 1)))))
 
 (defn format-float [rate]
-  (format "%.8f" rate))
+  (format "%.8f" (- rate 0.000000005)))
 
 (defn truncate-float [rate]
   (Double/parseDouble (format-float rate)))

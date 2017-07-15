@@ -1,15 +1,17 @@
 (ns weatherman.api
   (:require [cheshire.core :as json]
             [clj-http.client :as http]
+            [clojure.core.async :as a]
             [weatherman.crypto :as crypto]
-            [weatherman.utils :as utils]))
+            [weatherman.utils :as utils]
+            [weatherman.wamp :as wamp]))
 
 (def api-key (System/getenv "POLONIEX_API_KEY"))
 (def secret (System/getenv "POLONIEX_SECRET"))
 
 (def user-agent "weatherman.api.clj/0.0.1")
 
-(def poloniex-push-endpoint "wss://api2.poloniex.com")
+(def poloniex-push-endpoint "wss://api.poloniex.com")
 (def poloniex-public-endpoint "https://poloniex.com/public")
 (def poloniex-trade-endpoint "https://poloniex.com/tradingApi")
 
@@ -245,10 +247,44 @@
   (api-post {:command "toggleAutoRenew"
              :orderNumber order-number}))
 
+;; Push API
+(defn- poloniex-ticker-parser [[[currencyPair last lowestAsk highestBid percentChange
+                                 baseVolume quoteVolume isFrozen hr24High hr24Low]]]
+  {:currencyPair currencyPair
+   :last (Double/parseDouble last)
+   :lowestAsk (Double/parseDouble lowestAsk)
+   :highestBid (Double/parseDouble highestBid)
+   :percentChange (Double/parseDouble percentChange)
+   :baseVolume (Double/parseDouble baseVolume)
+   :quoteVolume (Double/parseDouble quoteVolume)
+   :isFrozen (pos? isFrozen)
+   :24hrHigh (Double/parseDouble hr24High)
+   :24hrLow (Double/parseDouble hr24Low)})
+
+(defn ticker []
+  (let [connection (wamp/connect poloniex-push-endpoint "realm1")
+        out (a/chan 1000 (map poloniex-ticker-parser))]
+    (a/go
+      (loop [e (a/<! (:events connection))]
+        (case (:type e)
+          :connect (println "Connected!")
+          :disconnect (println "Disconnected!" (:data e))
+          :ready (println "Ready!")
+          :join (do
+                  (println "Joined!" (:data e))
+                  (a/pipe (wamp/subscribe (:session connection) "ticker") out))
+          :leave (println "Left!" (:data e))
+          :user-error (println "User-error!" (:data e)))
+        (recur (a/<! (:events connection)))))
+    out))
+
 ;; Initialization
-(defn init []
+(defn configure []
   (letfn [(configure! [atom api-call]
             (reset! atom (->> api-call keys (map name) set)))]
-    (crypto/configure-mac! secret)
     (configure! currencies (return-currencies))
     (configure! currency-pairs (return-ticker))))
+
+(defn init []
+  (configure)
+  (crypto/configure-mac! secret))

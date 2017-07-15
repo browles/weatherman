@@ -27,7 +27,7 @@
   (println "Fetching lending account balance for" currency)
   (let [balance (-> (api/return-available-account-balances "lending")
                     (get-in [:lending (keyword currency)] "0")
-                    (#(Float/parseFloat %)))
+                    (#(Double/parseDouble %)))
         threshold 0.01
         amount (utils/truncate-float (min balance 0.25))
         duration 2

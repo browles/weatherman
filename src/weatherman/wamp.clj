@@ -14,8 +14,6 @@
 
 (set! *warn-on-reflection* true)
 
-(def poloniex-push-endpoint "wss://api.poloniex.com")
-
 (def debug (atom nil))
 
 (defmacro reify-handler [i f]
@@ -27,8 +25,8 @@
               'ISession$OnDisconnectListener '(onDisconnect [this a b])
               'ISession$OnUserErrorListener '(onUserError [this a b])}
         [method argv] (i->m i)
-        r (list method argv (cons f (rest argv)))]
-    `(reify ~i ~r)))
+        cb (list method argv (cons f (rest argv)))]
+    `(reify ~i ~cb)))
 
 (defn connect [url realm]
   (let [executor (Executors/newSingleThreadExecutor)
@@ -59,17 +57,19 @@
                                              (fn [session message]
                                                (a/>!! events {:type :user-error
                                                               :data message})))}]
+    (reset! debug executor)
     (.add client session realm authenticators)
     (doto session
       (.addOnConnectListener (:connect handlers))
       (.addOnDisconnectListener (:disconnect handlers))
-      (.adOnReadyListener (:ready handlers))
+      (.adOnReadyListener (:ready handlers)) ; Yes, 'ad'
       (.addOnJoinListener (:join handlers))
       (.addOnLeaveListener (:leave handlers))
       (.addOnUserErrorListener (:user-error handlers)))
-    (.connect client)))
+    (.connect client)
+    {:events events :session session}))
 
-(defn subscribe [session topic]
+(defn subscribe [^Session session ^String topic]
   (let [messages (a/chan)
         handler (reify-handler IEventHandler
                                (fn [a b c]
@@ -78,13 +78,5 @@
     (.subscribe session topic handler options)
     messages))
 
-(defn go []
-  (let [test (connect poloniex-push-endpoint "realm1")]
-    (loop [e (a/<!! (:events test))]
-      (when (= :join (:type e))
-        (a/go
-          (let [messages (subscribe (:session test) "ticker")]
-            (loop [m (a/<! messages)]
-              (prn m)
-              (recur (a/<! messages))))))
-      (recur (a/<!! (:events test))))))
+(defn leave [^Session session]
+  (.leave session "Leave called." "Bye!"))

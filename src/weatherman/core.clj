@@ -1,6 +1,8 @@
 (ns weatherman.core
   (:require [clojure.core.async :as a]
             [clojure.tools.logging :as log]
+            [plumbing.core :as pc]
+            [plumbing.map :as pm]
             [weatherman.api :as api]
             [weatherman.db :as db]
             [weatherman.utils :as utils])
@@ -53,19 +55,21 @@
   (let [get-ticker (utils/throttle api/return-ticker 1 period)
         out (utils/repeatedly-chan get-ticker 5)]
     (utils/safe-thread
-      (let [parse-price-info (fn [t]
-                               (into {} (map (fn [[k v]]
-                                               (if (map? v)
-                                                 [k (select-keys v [:last :highestBid :lowestAsk])]
-                                                 [k v]))
-                                             t)))
+      (let [parse-price-info (fn [all-tickers]
+                               (pc/map-vals
+                                 (fn [v]
+                                   (if (map? v)
+                                     (->> (pm/safe-select-keys v [:last :highestBid :lowestAsk])
+                                          (pc/map-vals #(Double/parseDouble %)))
+                                     v))
+                                 all-tickers))
             diffs (->> out
                        utils/to-seq
                        (map parse-price-info)
                        utils/pairs
                        (map #(apply utils/diff-map %)))]
         (doseq [diff (take 10 diffs)]
-          (prn diff (:start-delta diff) (:end-delta diff))))
+          (prn diff)))
       out)))
 
 (defn -main
@@ -73,7 +77,7 @@
   (log/info "Starting.")
   (api/init)
   (let [lender (utils/every (* 1000 60 15) #(create-loan "BTC"))
-        ticker (a/chan) #_(poll-ticker (* 1000 1))]
+        ticker (poll-ticker (* 1000 1))]
     (try
       @(promise)
       (finally

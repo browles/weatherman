@@ -70,4 +70,4 @@
           errors (exit 1 (string/join \newline errors))
           :else (case (first arguments)
                   "run-migrations" (run-migrations (:schema options))
-                  (exit 0 (usage summary))))))
+                  (exit 1 (usage summary))))))

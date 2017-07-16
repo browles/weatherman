@@ -12,6 +12,7 @@
                  [clj-http "3.6.1"]
                  [cheshire "5.7.1"]
                  [environ "1.1.0"]
+                 [prismatic/plumbing "0.5.4"]
                  [local/autobahn "17.7.1"]
                  [org.xerial/sqlite-jdbc "3.19.3"]
                  [io.netty/netty-all "4.1.13.Final"]

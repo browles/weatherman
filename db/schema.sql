@@ -26,3 +26,24 @@ CREATE TABLE loan_offers (
 );
 
 CREATE INDEX loan_offers_created_at_idx ON loan_offers(created_at);
+
+-- [2] Add ticker
+CREATE TABLE ticker_ingestions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+  api_start TIMESTAMP NOT NULL,
+  api_end TIMESTAMP NOT NULL
+);
+
+CREATE INDEX ticker_ingestions_api_end_idx ON ticker_ingestions(api_end);
+
+CREATE TABLE ticker (
+  id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+  ingestion_id INTEGER NOT NULL,
+  currency_pair TEXT NOT NULL,
+  last REAL NOT NULL,
+  highest_bid REAL NOT NULL,
+  lowest_ask REAL NOT NULL,
+  FOREIGN KEY(ingestion_id) REFERENCES ticker_ingestions(id)
+);
+
+CREATE INDEX ticker_currency_pair_idx ON ticker(currency_pair);

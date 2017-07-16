@@ -7,8 +7,8 @@
             [weatherman.utils :as utils]
             [weatherman.wamp :as wamp]))
 
-(def api-key (env :POLONIEX_API_KEY))
-(def secret (env :POLONIEX_SECRET))
+(def api-key (env :poloniex-api-key))
+(def secret (env :poloniex-secret))
 
 (def user-agent "weatherman.api.clj/0.0.1")
 

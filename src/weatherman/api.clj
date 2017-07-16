@@ -2,6 +2,7 @@
   (:require [cheshire.core :as json]
             [clj-http.client :as http]
             [clojure.core.async :as a]
+            [clojure.tools.logging :as log]
             [environ.core :refer [env]]
             [weatherman.crypto :as crypto]
             [weatherman.utils :as utils]
@@ -294,7 +295,10 @@
     (configure currency-pairs (return-ticker))))
 
 (defn init []
-  (configure!)
-  (assert api-key "Poloniex API key not set!")
-  (assert secret "Poloniex secret not set!")
-  (crypto/configure-mac! secret))
+  (try
+    (configure!)
+    (assert api-key "Poloniex API key not set!")
+    (assert secret "Poloniex secret not set!")
+    (crypto/configure-mac! secret)
+    (catch Exception e
+      (log/fatal "Error initializing API." e))))

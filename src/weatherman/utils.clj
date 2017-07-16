@@ -1,7 +1,8 @@
 (ns weatherman.utils
   (:require [clj-http.util :refer [url-encode]]
             [clojure.core.async :as a]
-            [clojure.string :as string]))
+            [clojure.string :as string]
+            [clojure.tools.logging :as log]))
 
 ;; core.async utils
 (defmacro safe-thread [& body]
@@ -9,8 +10,7 @@
      (try
        ~@body
        (catch Exception e#
-         (prn "Uncaught exception in background thread!")
-         (prn e#)
+         (log/fatal "Uncaught exception in background thread!" e#)
          (System/exit 1)))))
 
 (defmacro safe-go [& body]
@@ -18,8 +18,7 @@
      (try
        ~@body
        (catch Exception e#
-         (prn "Uncaught exception in background thread!")
-         (prn e#)
+         (log/fatal "Uncaught exception in background go routine!" e#)
          (System/exit 1)))))
 
 (defn every

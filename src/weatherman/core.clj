@@ -1,12 +1,13 @@
 (ns weatherman.core
   (:require [clojure.core.async :as a]
+            [clojure.tools.logging :as log]
             [weatherman.api :as api]
             [weatherman.db :as db]
             [weatherman.utils :as utils])
   (:gen-class))
 
 (defn process-current-market-loan-offers [currency]
-  (println "Fetching current loan offers for" currency)
+  (log/info "Fetching current loan offers for" currency)
   (->> (api/return-loan-orders currency)
        :offers
        (db/record-market-loan-offers)))
@@ -24,7 +25,7 @@
 
 (defn create-loan [currency]
   (process-current-market-loan-offers currency)
-  (println "Fetching lending account balance for" currency)
+  (log/info "Fetching lending account balance for" currency)
   (let [balance (-> (api/return-available-account-balances "lending")
                     (get-in [:lending (keyword currency)] "0.00")
                     (#(Double/parseDouble %)))
@@ -33,16 +34,16 @@
         duration 2
         rate (utils/truncate-float (choose-rate))]
     (when (>= amount threshold)
-      (println "Attempting to create offer for" amount currency "at" (utils/format-float rate))
+      (log/info "Attempting to create offer for" amount currency "at" (utils/format-float rate))
       (let [result (api/create-loan-offer "BTC"
                                           amount
                                           duration
                                           0
                                           rate)]
         (if (zero? (:success result))
-          (println "Failed creating offer for reason:" result)
+          (log/info "Failed creating offer for reason:" result)
           (do
-            (println "Created offer for" amount "at" (utils/format-float rate))
+            (log/info "Created offer for" amount "at" (utils/format-float rate))
             (db/insert-loan-offer {:order_id (:orderID result)
                                    :amount amount
                                    :duration duration
@@ -69,6 +70,7 @@
 
 (defn -main
   [& args]
+  (log/info "Starting.")
   (api/init)
   (let [lender (utils/every (* 1000 60 15) #(create-loan "BTC"))
         ticker (a/chan) #_(poll-ticker (* 1000 1))]
@@ -76,4 +78,5 @@
       @(promise)
       (finally
         (a/close! lender)
-        (a/close! ticker)))))
+        (a/close! ticker)
+        (log/info "Exiting.")))))

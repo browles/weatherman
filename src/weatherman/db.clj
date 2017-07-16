@@ -2,6 +2,9 @@
   (:require [clojure.java.jdbc :as jdbc]
             [clojure.string :as string]))
 
+(def schema-file "db/schema.sql")
+(def db-file "db/poloniex.db")
+
 (def poloniex-db {:classname "org.sqlite.JDBC"
                   :subprotocol "sqlite"
                   :subname "db/poloniex.db"})
@@ -19,6 +22,10 @@
 (defn query [str]
   (with-db-transaction
     (jdbc/query *poloniex-conn* str)))
+
+(defn execute [str]
+  (with-db-transaction
+    (jdbc/execute! *poloniex-conn* str)))
 
 (defn get-last-row [table]
   (-> (format "SELECT * FROM %s ORDER BY id DESC LIMIT 1;" (name table))

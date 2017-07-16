@@ -61,7 +61,7 @@
     (lazy-seq (cons head (to-seq c)))))
 
 (defn eager-lazy [f buf]
-  (to-seq (repeatedly-chanf buf)))
+  (to-seq (repeatedly-chan buf)))
 
 ;; misc
 (defn format-float [rate]

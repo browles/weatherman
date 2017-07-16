@@ -12,8 +12,6 @@
            [java.util List]
            [java.util.concurrent CompletableFuture Executors ExecutorService]))
 
-(set! *warn-on-reflection* true)
-
 (def debug (atom nil))
 
 (defmacro reify-handler [i f]

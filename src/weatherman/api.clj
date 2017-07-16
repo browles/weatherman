@@ -2,12 +2,13 @@
   (:require [cheshire.core :as json]
             [clj-http.client :as http]
             [clojure.core.async :as a]
+            [environ.core :refer [env]]
             [weatherman.crypto :as crypto]
             [weatherman.utils :as utils]
             [weatherman.wamp :as wamp]))
 
-(def api-key (System/getenv "POLONIEX_API_KEY"))
-(def secret (System/getenv "POLONIEX_SECRET"))
+(def api-key (env :POLONIEX_API_KEY))
+(def secret (env :POLONIEX_SECRET))
 
 (def user-agent "weatherman.api.clj/0.0.1")
 
@@ -287,4 +288,6 @@
 
 (defn init []
   (configure)
+  (assert api-key "Poloniex API key not set!")
+  (assert secret "Poloniex secret not set!")
   (crypto/configure-mac! secret))

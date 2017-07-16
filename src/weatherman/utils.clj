@@ -27,9 +27,9 @@
    (every 0 schedule f))
   ([delay schedule f]
    (let [cancel (a/chan)]
-     (safe-go
+     (safe-thread
        (loop [timer (a/timeout delay)]
-         (when (a/alt!
+         (when (a/alt!!
                  cancel false
                  timer true)
            (let [start (System/currentTimeMillis)
@@ -41,27 +41,22 @@
 
 (defn throttle [f limit period]
   (let [throttle-chan (a/chan limit)]
-    (dotimes [_ limit] (a/>!! throttle-chan :tick))
+    (dotimes [_ limit] (a/>!! throttle-chan (a/timeout 0)))
     (fn [& args]
-      (a/<!! throttle-chan)
-      (a/go (a/<! (a/timeout period))
-            (a/>! throttle-chan :tick))
+      (a/<!! (a/<!! throttle-chan))
+      (a/put! throttle-chan (a/timeout period))
       (apply f args))))
 
-(defn repeatedly-chan
-  ([f buf]
-   (let [out (a/chan buf)]
-     (safe-go
-       (while true
-         (a/<! out (f))))
-     out)))
+(defn repeatedly-chan [f buf]
+  (let [out (a/chan buf)]
+    (safe-thread
+      (while true
+        (a/>!! out (f))))
+    out))
 
 (defn to-seq [c]
-  (when-let [head (a/<!! c)]
+  (when-some [head (a/<!! c)]
     (lazy-seq (cons head (to-seq c)))))
-
-(defn eager-lazy [f buf]
-  (to-seq (repeatedly-chan buf)))
 
 ;; misc
 (defn format-float [rate]

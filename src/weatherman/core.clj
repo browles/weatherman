@@ -26,7 +26,7 @@
   (process-current-market-loan-offers currency)
   (println "Fetching lending account balance for" currency)
   (let [balance (-> (api/return-available-account-balances "lending")
-                    (get-in [:lending (keyword currency)] "0")
+                    (get-in [:lending (keyword currency)] "0.00")
                     (#(Double/parseDouble %)))
         threshold 0.01
         amount (utils/truncate-float (min balance 0.25))
@@ -48,11 +48,32 @@
                                    :duration duration
                                    :rate rate})))))))
 
+(defn poll-ticker [period]
+  (let [get-ticker (utils/throttle api/return-ticker 1 period)
+        out (utils/repeatedly-chan get-ticker 5)]
+    (utils/safe-thread
+      (let [parse-price-info (fn [t]
+                               (into {} (map (fn [[k v]]
+                                               (if (map? v)
+                                                 [k (select-keys v [:last :highestBid :lowestAsk])]
+                                                 [k v]))
+                                             t)))
+            diffs (->> out
+                       utils/to-seq
+                       (map parse-price-info)
+                       utils/pairs
+                       (map #(apply utils/diff-map %)))]
+        (doseq [diff (take 10 diffs)]
+          (prn diff (:start-delta diff) (:end-delta diff))))
+      out)))
+
 (defn -main
   [& args]
   (api/init)
-  (let [lender (utils/every (* 1000 60 15) #(create-loan "BTC"))]
+  (let [lender (utils/every (* 1000 60 15) #(create-loan "BTC"))
+        ticker (a/chan) #_(poll-ticker (* 1000 1))]
     (try
       @(promise)
       (finally
-        (a/>!! lender :stop)))))
+        (a/close! lender)
+        (a/close! ticker)))))

@@ -35,16 +35,20 @@
                                "Invalid account provided: %s"))
 
 (defn- api-get* [data]
-  (->
-    (http/get (format "%s?%s" poloniex-public-endpoint (utils/url-encode-map data))
-              {:headers {"User-Agent" user-agent}
-               :as :json})
-    :body))
+  (let [start (System/currentTimeMillis)]
+    (->
+      (http/get (format "%s?%s" poloniex-public-endpoint (utils/url-encode-map data))
+                {:headers {"User-Agent" user-agent}
+                 :as :json})
+      :body
+      (assoc :api-start start
+             :api-end (System/currentTimeMillis)))))
 
 (defn- api-post* [data]
   (let [nonce (System/currentTimeMillis)
         post-body (utils/url-encode-map (assoc data :nonce nonce))
-        signed-data (crypto/hmac-sha512-hex post-body)]
+        signed-data (crypto/hmac-sha512-hex post-body)
+        start (System/currentTimeMillis)]
     (->
       (http/post poloniex-trade-endpoint
                  {:headers {"Content-Type" "application/x-www-form-urlencoded"
@@ -53,7 +57,9 @@
                             "User-Agent" user-agent}
                   :body post-body
                   :as :json})
-      :body)))
+      :body
+      (assoc :api-start start
+             :api-end (System/currentTimeMillis)))))
 
 (def api-get (utils/throttle api-get* 6 1000))
 (def api-post (utils/throttle api-post* 6 1000))
@@ -125,7 +131,8 @@
   (api-post {:command "returnOpenOrders"
              :currencyPair currency-pair}))
 
-(defn return-trade-history [currency-pair start end]
+;; NOTE: "my" to resolve a naming confilct.
+(defn return-my-trade-history [currency-pair start end]
   (validate-currency-pair currency-pair :allow "all")
   (api-post {:command "returnTradeHistory"
              :start start
@@ -280,14 +287,14 @@
     out))
 
 ;; Initialization
-(defn configure []
-  (letfn [(configure! [atom api-call]
+(defn configure! []
+  (letfn [(configure [atom api-call]
             (reset! atom (->> api-call keys (map name) set)))]
-    (configure! currencies (return-currencies))
-    (configure! currency-pairs (return-ticker))))
+    (configure currencies (return-currencies))
+    (configure currency-pairs (return-ticker))))
 
 (defn init []
-  (configure)
+  (configure!)
   (assert api-key "Poloniex API key not set!")
   (assert secret "Poloniex secret not set!")
   (crypto/configure-mac! secret))

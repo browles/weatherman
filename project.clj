@@ -22,6 +22,7 @@
                  [org.knowm.xchange/xchange-coinbase "4.2.0"]]
   :main weatherman.core
   :jvm-opts ["-Xmx8g" "-Xms8g" "-server" "-XX:-OmitStackTraceInFastThrow" "-DLogDirectory=./log"]
+  :aliases {"cli" ["run" "-m" "weatherman.cli"]}
   :repl-options {:init-ns weatherman.core
                  :init (require 'weatherman.core)}
   :plugins [[lein-shell "0.5.0"]

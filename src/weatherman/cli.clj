@@ -2,10 +2,11 @@
   (:require [clojure.string :as string]
             [clojure.tools.cli :as cli]
             [weatherman.db :as db])
-  (:import [java.lang AssertionError])
+  (:import [java.lang AssertionError]
+           [org.sqlite SQLiteException])
   (:gen-class))
 
-(def migration-regex #"^-- \[([0-9]+)\](.*)")
+(def migration-regex #"(?m)^\s*-- \[([0-9]+)\](.*)$")
 
 (defn- parse-migrations [schema-file]
   (let [text (slurp schema-file)
@@ -28,7 +29,7 @@
     (let [last-migration (get (db/get-last-row :migrations) :id 0)
           migrations (parse-migrations schema-file)
           ids (map :id migrations)]
-      (assert (= ids (->> migrations (sort-by :id <) (map :ids))) "Migrations are out of order.")
+      (assert (= ids (->> migrations (sort-by :id <) (map :id))) "Migrations are out of order.")
       (assert (= ids (->> migrations count range (map inc))) "Migrations must be consecutive and start at 1.")
       (doseq [migration (filter #(> (:id %) last-migration) migrations)]
         (println (format "Applying migration [%s]: %s" (:id migration) (:message migration)))
@@ -36,11 +37,14 @@
           (db/execute (:command migration))
           (db/insert :migrations {:message migration}))))
     (catch AssertionError e
-      (prn "Migration failed for reason:" (.getMessage e)))))
+      (println "Error in migrations file:" (.getMessage e)))
+    (catch SQLiteException e
+      (println "Error executing SQL:" (.getMessage e)))))
 
 (def cli-options
   [[nil "--schema FILE" "Path to the schema migrations file."
-    :validate [seq "No schema provided."]]
+    :default db/schema-file
+    :validate [seq "--schema specified but no file provided."]]
    ["-h" "--help"]])
 
 (defn- usage [summary]

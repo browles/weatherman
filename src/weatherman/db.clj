@@ -5,14 +5,14 @@
 (def schema-file "db/schema.sql")
 (def db-file "db/poloniex.db")
 
-(def poloniex-db {:classname "org.sqlite.JDBC"
-                  :subprotocol "sqlite"
-                  :subname "db/poloniex.db"})
+(def ^:dynamic *poloniex-db* {:classname "org.sqlite.JDBC"
+                              :subprotocol "sqlite"
+                              :subname "db/poloniex.db"})
 
 (def ^:dynamic *poloniex-conn*)
 
 (defmacro with-db-transaction [& body]
-  `(jdbc/with-db-transaction [conn# poloniex-db]
+  `(jdbc/with-db-transaction [conn# *poloniex-db*]
      (binding [*poloniex-conn* conn#]
        ~@body)))
 

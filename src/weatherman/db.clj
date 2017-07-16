@@ -19,13 +19,13 @@
 ;; cljfmt doesn't like "rowid()"
 (def last-insert-rowid (keyword "last_insert_rowid()"))
 
-(defn query [str]
+(defn query [& args]
   (with-db-transaction
-    (jdbc/query *poloniex-conn* str)))
+    (apply jdbc/query *poloniex-conn* args)))
 
-(defn execute [str]
+(defn execute [& args]
   (with-db-transaction
-    (jdbc/execute! *poloniex-conn* str)))
+    (apply jdbc/execute! *poloniex-conn* args)))
 
 (defn get-last-row [table]
   (-> (format "SELECT * FROM %s ORDER BY id DESC LIMIT 1;" (name table))

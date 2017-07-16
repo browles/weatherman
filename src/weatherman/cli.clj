@@ -34,8 +34,9 @@
       (doseq [migration (filter #(> (:id %) last-migration) migrations)]
         (println (format "Applying migration [%s]: %s" (:id migration) (:message migration)))
         (db/with-db-transaction
-          (db/execute (:command migration))
-          (db/insert :migrations {:message migration}))))
+          (doseq [command (string/split (:command migration) #";")]
+            (db/execute command))
+          (db/insert :migrations (select-keys migration [:message])))))
     (catch AssertionError e
       (println "Error in migrations file:" (.getMessage e)))
     (catch SQLiteException e

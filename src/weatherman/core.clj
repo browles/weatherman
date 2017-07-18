@@ -67,20 +67,25 @@
                        utils/to-seq
                        (map parse-price-info)
                        utils/pairs
-                       (map #(apply utils/diff-map %)))]
-        (doseq [diff (take 10 diffs)]
-          (prn diff)))
+                       (map #(utils/diff-map (first %) (second %))))]
+        (doseq [diff diffs]
+          (log/debug "Recording ticker diff:" diff)
+          (db/record-ticker diff)))
       out)))
+
+(def actions
+  {:lender #(utils/every (* 1000 60 15) (partial create-loan "BTC"))
+   :ticker #(poll-ticker (* 1000 1))})
 
 (defn -main
   [& args]
   (log/info "Starting.")
   (api/init)
-  (let [lender (utils/every (* 1000 60 15) #(create-loan "BTC"))
-        ticker (poll-ticker (* 1000 1))]
+  (let [valid (keep actions args)
+        jobs (map #(%) valid)]
+    (long/info "Kicking off jobs:" valid)
     (try
       @(promise)
       (finally
-        (a/close! lender)
-        (a/close! ticker)
+        (dorun (map a/close! jobs))
         (log/info "Exiting.")))))

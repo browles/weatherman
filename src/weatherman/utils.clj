@@ -64,11 +64,12 @@
 (defn truncate-float [rate]
   (Double/parseDouble (format-float rate)))
 
-(defn diff-map [a b]
-  (->> b
-       (filter (fn [[k v]]
-                 (not= (k a) v)))
-       (into {})))
+(defn diff-map [a b & exclusions]
+  (let [diff (->> b
+                  (filter (fn [[k v]]
+                            (not= (k a) v)))
+                  (into {}))]
+    (reduce #(assoc %1 %2 (%2 b)) diff exclusions)))
 
 (defn pairs [coll]
   (->> (map list coll coll)

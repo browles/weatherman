@@ -1,5 +1,6 @@
 (ns weatherman.db
-  (:require [clojure.java.jdbc :as jdbc]
+  (:require [clj-time.coerce :as c]
+            [clojure.java.jdbc :as jdbc]
             [clojure.string :as string]))
 
 (def schema-file "db/schema.sql")
@@ -53,6 +54,8 @@
 (def insert-market-loan-offer-ingestion (partial insert :market_loan_offer_ingestions))
 (def insert-market-loan-offer (partial insert :market_loan_offers))
 (def insert-loan-offer (partial insert :loan_offers))
+(def insert-ticker-ingestion (partial insert :ticker_ingestions))
+(def insert-ticker (partial insert :ticker))
 
 (defn record-market-loan-offers [offers]
   (with-db-transaction
@@ -63,4 +66,21 @@
       (->> offers
            (map #(assoc % :ingestion_id ingestion-id))
            (map insert-market-loan-offer)
-           doall))))
+           dorun))))
+
+(defn record-ticker [ticker]
+  (with-db-transaction
+    (let [ingestion-id (->> {:api_start (c/to-timestamp (:api-start ticker))
+                             :api_end (c/to-timestamp (:api-end ticker))}
+                            insert-ticker-ingestion
+                            first
+                            last-insert-rowid)]
+      (->> (dissoc ticker :api-start :api-end)
+           (map (fn [[k v]]
+                  {:ingestion_id ingestion-id
+                   :currency_pair (name k)
+                   :last (:last v)
+                   :highest_bid (:highestBid v)
+                   :lowest_ask (:lowestAsk v)}))
+           (map insert-ticker)
+           dorun))))

@@ -83,8 +83,8 @@
   (log/debug "Debugging...")
   (api/init)
   (let [valid (filter actions args)
+        _ (log/info "Kicking off jobs:" (map name valid))
         jobs (doall (map #(%) (map actions valid)))]
-    (log/info "Kicking off jobs:" (map name valid))
     (try
       @(promise)
       (finally

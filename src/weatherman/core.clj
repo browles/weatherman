@@ -80,10 +80,11 @@
 (defn -main
   [& args]
   (log/info "Starting.")
+  (log/debug "Debugging...")
   (api/init)
-  (let [valid (keep actions args)
-        jobs (map #(%) valid)]
-    (long/info "Kicking off jobs:" valid)
+  (let [valid (filter actions args)
+        jobs (doall (map #(%) (map actions valid)))]
+    (log/info "Kicking off jobs:" (map name valid))
     (try
       @(promise)
       (finally

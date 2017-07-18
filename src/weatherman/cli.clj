@@ -1,6 +1,7 @@
 (ns weatherman.cli
   (:require [clojure.string :as string]
             [clojure.tools.cli :as cli]
+            [weatherman.core :as core]
             [weatherman.db :as db])
   (:import [java.lang AssertionError]
            [org.sqlite SQLiteException])
@@ -46,6 +47,8 @@
   [[nil "--schema FILE" "Path to the schema migrations file."
     :default db/schema-file
     :validate [seq "--schema specified but no file provided."]]
+   [nil "--lender"]
+   [nil "--ticker"]
    ["-h" "--help"]])
 
 (defn- usage [summary]
@@ -62,7 +65,6 @@
 
 (defn- exit [status message]
   (println message)
-  (throw (Exception. "asdf"))
   (System/exit status))
 
 (defn -main [& args]
@@ -71,4 +73,5 @@
           errors (exit 1 (string/join \newline errors))
           :else (case (first arguments)
                   "run-migrations" (run-migrations (:schema options))
+                  "job" (apply core/-main (keys options))
                   (exit 1 (usage summary))))))

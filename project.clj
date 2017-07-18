@@ -23,7 +23,8 @@
                  [org.knowm.xchange/xchange-poloniex "4.2.0"]
                  [org.knowm.xchange/xchange-coinbase "4.2.0"]]
   :main weatherman.core
-  :jvm-opts ["-Xmx8g" "-Xms8g" "-server" "-XX:-OmitStackTraceInFastThrow" "-DLogDirectory=./log"]
+  :aot :all
+  :jvm-opts ["-Xmx8g" "-Xms8g" "-server" "-XX:-OmitStackTraceInFastThrow" "-DLogLevel=INFO" "-DLogDirectory=./log"]
   :aliases {"cli" ["run" "-m" "weatherman.cli"]}
   :repl-options {:init-ns weatherman.core
                  :init (require 'weatherman.core)}
@@ -32,4 +33,4 @@
             [lein-environ "1.1.0"]]
   :global {*warn-on-reflection* true}
   :target-path "target/%s"
-  :profiles {})
+  :profiles {:debug {:jvm-opts ["-DLogLevel=DEBUG"]}})

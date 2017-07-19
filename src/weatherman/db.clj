@@ -12,10 +12,13 @@
 
 (def ^:dynamic *poloniex-conn*)
 
+(def db-lock (Object.))
+
 (defmacro with-db-transaction [& body]
   `(jdbc/with-db-transaction [conn# *poloniex-db*]
-     (binding [*poloniex-conn* conn#]
-       ~@body)))
+     (locking db-lock
+       (binding [*poloniex-conn* conn#]
+         ~@body))))
 
 ;; cljfmt doesn't like "rowid()"
 (def last-insert-rowid (keyword "last_insert_rowid()"))

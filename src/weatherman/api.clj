@@ -273,8 +273,8 @@
 (defn ticker []
   (let [connection (wamp/connect poloniex-push-endpoint "realm1")
         out (a/chan 1000 (map poloniex-ticker-parser))]
-    (a/go
-      (loop [e (a/<! (:events connection))]
+    (utils/safe-thread
+      (loop [e (a/<!! (:events connection))]
         (case (:type e)
           :connect (println "Connected!")
           :disconnect (println "Disconnected!" (:data e))
@@ -284,7 +284,7 @@
                   (a/pipe (wamp/subscribe (:session connection) "ticker") out))
           :leave (println "Left!" (:data e))
           :user-error (println "User-error!" (:data e)))
-        (recur (a/<! (:events connection)))))
+        (recur (a/<!! (:events connection)))))
     out))
 
 ;; Initialization

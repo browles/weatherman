@@ -47,3 +47,6 @@ CREATE TABLE ticker (
 );
 
 CREATE INDEX ticker_currency_pair_idx ON ticker(currency_pair);
+
+-- [3] Add ingestion_id index
+CREATE INDEX ticker_ingestion_id_idx ON ticker(ingestion_id);

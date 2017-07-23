@@ -74,7 +74,7 @@
 (defn pairs [coll]
   (->> (map list coll coll)
        flatten
-       (drop 1)
+       (cons nil)
        (drop-last 1)
        (partition-all 2)))
 

@@ -7,6 +7,7 @@
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.clojure/core.async "0.3.443"]
                  [org.clojure/java.jdbc "0.6.1"]
+                 [org.clojure/tools.namespace "0.2.11"]
                  [org.clojure/tools.logging "0.4.0"]
                  [org.clojure/tools.cli "0.3.5"]
                  [clj-http "3.6.1"]

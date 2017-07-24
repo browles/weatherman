@@ -65,7 +65,9 @@
                                  all-tickers))
             diffs (->> out
                        utils/to-seq
+                       (filter identity)
                        (map parse-price-info)
+                       (cons {})
                        utils/pairs
                        (map #(utils/diff-map (first %) (second %))))]
         (doseq [diff diffs]

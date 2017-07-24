@@ -22,35 +22,86 @@
   {:ingestion ingestion
    :tickers (db/query ["SELECT * FROM ticker WHERE ingestion_id = ?" id])})
 
-(defn group-patch [ingestion-tickers]
+(defn group-patch [{:keys [ingestion tickers]}]
   (reduce (fn [patch {:keys [currency_pair last highest_bid lowest_ask]}]
-            (let [[a b] (->> (string/split currency_pair #"_") (map keyword))]
+            (let [[a b] (->> (string/split currency_pair #"_") (map keyword))
+                  weight (- (Math/log last))]
               (assoc patch
-                a {b {:last last
+                a {b {:weight weight
+                      :last last
                       :highest-bid highest_bid
                       :lowest-ask lowest_ask}}
-                b {a {:last (/ 1 last)
+                b {a {:weight (- weight)
+                      :last (/ 1 last)
                       :highest-bid (/ 1 highest_bid)
                       :lowest-ask (/ 1 lowest_ask)}})))
-          {:ingestion (:ingestion ingestion-tickers)}
-          (:tickers ingestion-tickers)))
+          {}
+          tickers))
 
-(defn apply-patch [patch state]
+(defn apply-patch [state patch]
   (merge-with merge state patch))
 
-(defn get-weights [patch]
-  (pc/map-vals (fn [c]
-                 (pc/map-vals (fn [t]
-                                (- (Math/log (:last t))))
-                              c))
-               patch))
+(defn bellman-ford [graph source]
+  (let [node (fn [_] (hash-map :d Double/POSITIVE_INFINITY :p nil))
+        V (atom (pc/map-vals node graph))
+        E (->> graph
+               (map (fn [[k v]] (map #(vector k %) (keys v))))
+               (apply concat))
+        cycles (atom #{})
+        weight (fn [u v] (get-in graph [u v :weight]))
+        get-node (fn [v] (get @V v))
+        relax (fn [u v]
+                (let [u-node (get-node u)
+                      v-node (get-node v)
+                      w (+ (:d u-node) (weight u v))]
+                  (when (> (:d v-node) w)
+                    (swap! V #(assoc % v {:d w :p u})))))]
+    (swap! V #(assoc % source {:d 0 :p nil}))
+    (dotimes [i (- (count graph) 1)]
+      (doseq [[u v] E]
+        (relax u v)))
+    (doseq [[u v] E]
+      (when (and (> (:d (get-node v)) (+ (:d (get-node u)) (weight u v))))
+        (loop [curr v path [] seen #{}]
+          (if (seen curr)
+            (swap! cycles (fn [state]
+                            (conj state
+                                  (->> path
+                                       (drop-while #(not= % curr))
+                                       reverse
+                                       (#(utils/rotate-until (first (sort %)) %))))))
+            (recur (:p (get-node curr)) (conj path curr) (conj seen curr))))))
+    @cycles))
+
+(defn validate-cycle [graph path]
+  (when (and (> (count path) 2)
+             (< (count path) 10))
+    (let [actual (->> path
+                      cycle
+                      (take (inc (count path)))
+                      utils/pairs
+                      (map #(get-in graph %))
+                      (map :last)
+                      (reduce *))]
+      (when (and actual (> actual 1))
+        actual))))
+
+(def hist (atom {}))
 
 (defn process []
-  (let [all-ticker (atom {})
-        graph (atom {})
-        ticker-patches (->> (get-ticker-ingestions)
-                            (map get-tickers)
-                            (map group-patch))]
-    (doseq [patch ticker-patches]
-      (swap! all-ticker apply-patch patch)
-      (swap! graph apply-patch (get-weights patch)))))
+  (reset! hist {})
+  (let [graph (atom {})
+        tickers (->> (get-ticker-ingestions)
+                     (map get-tickers)
+                     (map group-patch)
+                     (map (fn [p] (swap! graph #(apply-patch % p)))))]
+    (dorun (pmap (fn [ticker]
+                   (let [cycles (bellman-ford ticker :BTC)
+                         pred (memoize (partial validate-cycle ticker))
+                         valid (filter pred cycles)
+                         val (keep pred cycles)]
+                     (doseq [c valid]
+                       (swap! hist #(update % c (fnil inc 0))))))
+                 tickers))
+    @graph
+    nil))

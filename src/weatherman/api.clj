@@ -3,6 +3,7 @@
             [clj-http.client :as http]
             [clojure.core.async :as a]
             [clojure.tools.logging :as log]
+            [clojure.tools.logging :as log]
             [environ.core :refer [env]]
             [weatherman.crypto :as crypto]
             [weatherman.utils :as utils]
@@ -36,34 +37,40 @@
                                "Invalid account provided: %s"))
 
 (defn- api-get* [data]
-  (let [start (System/currentTimeMillis)]
-    (->
-      (http/get (format "%s?%s" poloniex-public-endpoint (utils/url-encode-map data))
-                {:headers {"User-Agent" user-agent}
-                 :as :json})
-      :body
-      (assoc :api-start start
-             :api-end (System/currentTimeMillis)))))
+  (try
+    (let [start (System/currentTimeMillis)]
+      (->
+        (http/get (format "%s?%s" poloniex-public-endpoint (utils/url-encode-map data))
+                  {:headers {"User-Agent" user-agent}
+                   :as :json})
+        :body
+        (assoc :api-start start
+               :api-end (System/currentTimeMillis))))
+    (catch Exception e
+      (log/info "Caught api-get exception" (.getMessage e)))))
 
 (defn- api-post* [data]
-  (let [nonce (System/currentTimeMillis)
-        post-body (utils/url-encode-map (assoc data :nonce nonce))
-        signed-data (crypto/hmac-sha512-hex post-body)
-        start (System/currentTimeMillis)]
-    (->
-      (http/post poloniex-trade-endpoint
-                 {:headers {"Content-Type" "application/x-www-form-urlencoded"
-                            "Key" api-key
-                            "Sign" signed-data
-                            "User-Agent" user-agent}
-                  :body post-body
-                  :as :json})
-      :body
-      (assoc :api-start start
-             :api-end (System/currentTimeMillis)))))
+  (try
+    (let [nonce (System/currentTimeMillis)
+          post-body (utils/url-encode-map (assoc data :nonce nonce))
+          signed-data (crypto/hmac-sha512-hex post-body)
+          start (System/currentTimeMillis)]
+      (->
+        (http/post poloniex-trade-endpoint
+                   {:headers {"Content-Type" "application/x-www-form-urlencoded"
+                              "Key" api-key
+                              "Sign" signed-data
+                              "User-Agent" user-agent}
+                    :body post-body
+                    :as :json})
+        :body
+        (assoc :api-start start
+               :api-end (System/currentTimeMillis))))
+    (catch Exception e
+      (log/info "Caught api-post exception" (.getMessage e)))))
 
-(def api-get (utils/throttle api-get* 6 1000))
-(def api-post (utils/throttle api-post* 6 1000))
+(defonce api-get (utils/throttle api-get* 6 1000))
+(defonce api-post (utils/throttle api-post* 6 1000))
 
 ;; Public API Methods
 (defn return-ticker []

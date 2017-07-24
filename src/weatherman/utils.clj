@@ -74,9 +74,15 @@
 (defn pairs [coll]
   (->> (map list coll coll)
        flatten
-       (cons nil)
+       (drop 1)
        (drop-last 1)
        (partition-all 2)))
+
+(defn rotate-until [item coll]
+  (->> coll
+       cycle
+       (drop-while #(not= % item))
+       (take (count coll))))
 
 (defn url-encode-map [m]
   (->> m

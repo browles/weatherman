@@ -16,6 +16,7 @@
 
 (defmacro with-db-transaction [& body]
   `(jdbc/with-db-transaction [conn# *poloniex-db*]
+     ;; This works even with nested transactions because locks are reentrant.
      (locking db-lock
        (binding [*poloniex-conn* conn#]
          ~@body))))

@@ -48,6 +48,7 @@
     :default db/schema-file
     :validate [seq "--schema specified but no file provided."]]
    [nil "--lender"]
+   [nil "--lending-rates"]
    [nil "--ticker"]
    ["-h" "--help"]])
 

@@ -76,7 +76,8 @@
       out)))
 
 (def actions
-  {:lender #(utils/every (* 1000 60 15) (partial create-loan "BTC"))
+  {:lending-rates #(utils/every (* 1000 60 15) (partial process-current-market-loan-offers "BTC"))
+   :lender #(utils/every (* 1000 60 15) (partial create-loan "BTC"))
    :ticker #(poll-ticker (* 1000 1))})
 
 (defn -main

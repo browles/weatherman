@@ -80,8 +80,7 @@
        (partition-all 2)))
 
 (defn rotate-until [item coll]
-  (->> coll
-       cycle
+  (->> (cycle coll)
        (drop-while #(not= % item))
        (take (count coll))))
 

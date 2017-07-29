@@ -66,21 +66,21 @@
       (when (and (> (:d (get-node v)) (+ (:d (get-node u)) (weight u v))))
         (loop [curr v path [] seen #{}]
           (if (seen curr)
-            (swap! cycles (fn [state]
-                            (conj state
-                                  (->> path
-                                       (drop-while #(not= % curr))
-                                       reverse
-                                       (#(utils/rotate-until (first (sort %)) %))))))
+            (swap! cycles (fn [cycles-vec]
+                            (let [cyc (-> (drop-while #(not= % curr) path)
+                                          reverse)
+                                  start (first (sort cyc))
+                                  capped-cycle (-> (utils/rotate-until start cyc)
+                                                   vec
+                                                   (conj start))]
+                              (conj cycles-vec capped-cycle))))
             (recur (:p (get-node curr)) (conj path curr) (conj seen curr))))))
     @cycles))
 
 (defn validate-cycle [graph path]
   (when (and (> (count path) 2)
              (< (count path) 10))
-    (let [actual (->> (cycle path)
-                      (take (inc (count path)))
-                      utils/pairs
+    (let [actual (->> (utils/pairs path)
                       (map #(get-in graph %))
                       (map (comp bigdec :last))
                       (reduce *))]

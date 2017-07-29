@@ -50,7 +50,8 @@
   (let [out (a/chan buf)]
     (safe-thread
       (while true
-        (a/>!! out (f))))
+        (when-some [r (f)]
+          (a/>!! out r))))
     out))
 
 (defn to-seq [c]

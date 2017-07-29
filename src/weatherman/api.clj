@@ -47,7 +47,7 @@
         (assoc :api-start start
                :api-end (System/currentTimeMillis))))
     (catch Exception e
-      (log/info "Caught api-get exception" (.getMessage e)))))
+      (log/error "Caught api-get exception" (.getMessage e)))))
 
 (defn- api-post* [data]
   (try
@@ -67,7 +67,7 @@
         (assoc :api-start start
                :api-end (System/currentTimeMillis))))
     (catch Exception e
-      (log/info "Caught api-post exception" (.getMessage e)))))
+      (log/error "Caught api-post exception" (.getMessage e)))))
 
 (defonce api-get (utils/throttle api-get* 6 1000))
 (defonce api-post (utils/throttle api-post* 6 1000))

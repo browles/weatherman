@@ -14,3 +14,4 @@ pom.xml.asc
 config.sh
 profiles.clj
 /log
+/data

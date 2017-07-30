@@ -105,7 +105,7 @@
                                        valid-cycle? (memoize (partial validate-cycle graph))
                                        valid (filter valid-cycle? cycles)
                                        values (keep valid-cycle? cycles)
-                                       reports (map #(hash-map :cycle %1 :value %2 :ingestion ingestion) valid values)]
+                                       reports (mapv #(hash-map :cycle %1 :value %2 :ingestion ingestion) valid values)]
                                    (swap! report #(into [] (concat % reports)))))
                                512
                                tickers))))

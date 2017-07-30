@@ -105,3 +105,9 @@
   (let [chunks (partition-all n coll)
         f-chunks (pmap (partial mapv f) chunks)]
     (apply concat f-chunks)))
+
+(defn serialize [e file]
+  (spit file (pr-str e)))
+
+(defn deserialize [file]
+  (read-string (slurp file)))

@@ -16,7 +16,7 @@
 (def end-time (c/to-long "2017-07-30T00:00:00.000"))
 
 (def fee 0.0015)
-(def fee-ratio (bigdec (- 1 fee)))
+(def fee-ratio (- 1 fee))
 
 (defn get-ticker-ingestions []
   (db/query ["SELECT * FROM ticker_ingestions WHERE api_end > ? AND api_end < ? ORDER BY api_end ASC" start-time end-time]))
@@ -53,7 +53,7 @@
                (map (fn [[k v]] (map #(vector k %) (keys v))))
                (apply concat))
         cycles (atom #{})
-        weight (fn [u v] (bigdec (get-in graph [u v :weight])))
+        weight (fn [u v] (get-in graph [u v :weight]))
         get-node (fn [v] (get @V v))
         relax (fn [u v]
                 (let [u-node (get-node u)
@@ -61,7 +61,7 @@
                       w (+ (:d u-node) (weight u v))]
                   (when (> (:d v-node) w)
                     (swap! V #(assoc % v {:d w :p u})))))]
-    (swap! V #(assoc % source {:d 0M :p nil}))
+    (swap! V #(assoc % source {:d 0 :p nil}))
     (dotimes [i (- (count graph) 1)]
       (doseq [[u v] E]
         (relax u v)))
@@ -85,7 +85,7 @@
              (< (count path) 10))
     (let [actual (->> (utils/pairs path)
                       (map #(get-in graph %))
-                      (map (comp bigdec :last))
+                      (map :last)
                       (map #(* % fee-ratio))
                       (reduce *))]
       (when (> actual 1)

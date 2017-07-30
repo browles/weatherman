@@ -15,6 +15,9 @@
 (def start-time (c/to-long "2017-07-23T17:00:59.426"))
 (def end-time (c/to-long "2017-07-30T00:00:00.000"))
 
+(def fee 0.0015)
+(def fee-ratio (bigdec (- 1 fee)))
+
 (defn get-ticker-ingestions []
   (db/query ["SELECT * FROM ticker_ingestions WHERE api_end > ? AND api_end < ? ORDER BY api_end ASC" start-time end-time]))
 
@@ -78,13 +81,14 @@
     @cycles))
 
 (defn validate-cycle [graph path]
-  (when (and (> (count path) 2)
+  (when (and (> (count path) 3)
              (< (count path) 10))
     (let [actual (->> (utils/pairs path)
                       (map #(get-in graph %))
                       (map (comp bigdec :last))
+                      (map #(* % fee-ratio))
                       (reduce *))]
-      (when (and actual (> actual 1))
+      (when (> actual 1)
         actual))))
 
 (def report (atom []))
@@ -96,11 +100,12 @@
                      (map get-tickers)
                      (map to-graph-patch)
                      (map (fn [p] (swap! ticker-state #(apply-patch % p)))))]
-    (dorun (pmap (fn [{:keys [ingestion graph]}]
-                   (let [cycles (bellman-ford graph :BTC)
-                         pred (memoize (partial validate-cycle graph))
-                         valid (filter pred cycles)
-                         values (keep pred cycles)
-                         reports (map #(hash-map :cycle %1 :value %2 :ingestion ingestion) valid values)]
-                     (swap! report #(concat % reports))))
-                 tickers))))
+    (dorun (utils/chunked-pmap (fn [{:keys [ingestion graph]}]
+                                 (let [cycles (bellman-ford graph :BTC)
+                                       valid-cycle? (memoize (partial validate-cycle graph))
+                                       valid (filter valid-cycle? cycles)
+                                       values (keep valid-cycle? cycles)
+                                       reports (map #(hash-map :cycle %1 :value %2 :ingestion ingestion) valid values)]
+                                   (swap! report #(into [] (concat % reports)))))
+                               512
+                               tickers))))

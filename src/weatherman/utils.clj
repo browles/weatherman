@@ -100,3 +100,8 @@
             (format message item))
     (assert (contains? @set-atom item)
             (format message item))))
+
+(defn chunked-pmap [f n coll]
+  (let [chunks (partition-all n coll)
+        f-chunks (pmap (partial mapv f) chunks)]
+    (apply concat f-chunks)))

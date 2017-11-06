@@ -88,9 +88,3 @@
   {:lending-rates #(utils/every (* 1000 60 15) (partial loan-control "BTC" false))
    :lender #(utils/every (* 1000 60 15) (partial loan-control "BTC" true))
    :ticker #(poll-ticker (* 1000 1))})
-
-#_(defonce config (atom #{}))
-
-#_(defstate jobs
-    :start (doall (map #(%) (keep actions @config)))
-    :stop (dorun (map a/close! jobs)))

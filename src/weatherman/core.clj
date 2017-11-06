@@ -16,7 +16,5 @@
   (log/info "Starting.")
   (log/debug "Debugging...")
   (api/init)
-  ;; (swap! jobs/config #(into % args))
   (let [l (:lender jobs/actions)]
-    (l)
-    @(promise)))
+    (l)))
